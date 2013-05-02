@@ -8,9 +8,10 @@ require('loyaltylion/main.php');
 $lion = new \LoyaltyLion\Client($token, $secret);
 
 // track an activity
-$response = $lion->track('purchase', 23, 'customer@example.com', 'a4ed', array(
+$response = $lion->track('purchase', 23, 'customer@example.com', array(
   'order_id' => 58231,
   'total' => 24.95,
+  'referral_id' => 'a43c',
 ));
 
 if (!$response->success) {

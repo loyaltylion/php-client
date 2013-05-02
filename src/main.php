@@ -27,18 +27,16 @@ class Client {
    * @param  [type] $name             The activity name, as defined by you
    * @param  [type] $customer_id      The ID of the current logged in customer
    * @param  [type] $customer_email   The email of the current logged in customer
-   * @param  [type] $ref_id           The referral code for the current user
    * @param  array  $properties       Activity specific properties
    * @return object                   An object with information about the request. If the track 
    *                                  was successful, object->success will be true.
    */
-  public function track($name, $customer_id, $customer_email, $ref_id, array $properties = array()) {
+  public function track($name, $customer_id, $customer_email, array $properties = array()) {
     $params = array(
       'name' => $name,
       'date' => date('c'),
       'customer_id' => $customer_id,
       'customer_email' => $customer_email,
-      'ref_id' => $ref_id,
       'properties' => $properties,
     );
 
