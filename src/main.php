@@ -1,16 +1,15 @@
 <?php
-namespace LoyaltyLion;
 
 require('lib/connection.php');
 
-class Client {
+class LoyaltyLion_Client {
 
   private $token;
   private $secret;
   private $connection;
-  private $base_uri = 'http://api.loyaltylion.com/v1';
+  private $base_uri = 'http://api.loyaltylion.com/v2';
 
-  public function __construct($token, $secret) {
+  public function __construct($token, $secret, $extra = array()) {
     $this->token = $token;
     $this->secret = $secret;
 
@@ -18,50 +17,12 @@ class Client {
       throw new Exception("Please provide a valid token and secret (token: ${token}, secret: ${secret})");
     }
 
-    $this->connection = new \LoyaltyLion\Connection($this->token, $this->secret, $this->base_uri);
-  }
+    if ($extra['base_uri']) $this->base_uri = $extra['base_uri'];
 
-  /**
-   * Track an activity, such as a purchase
-   * 
-   * @param  [type] $name             The activity name, as defined by you
-   * @param  [type] $customer_id      The ID of the current logged in customer
-   * @param  [type] $customer_email   The email of the current logged in customer
-   * @param  array  $properties       Activity specific properties
-   * @return object                   An object with information about the request. If the track 
-   *                                  was successful, object->success will be true.
-   */
-  public function track($name, $customer_id, $customer_email, array $properties = array()) {
-    $params = array(
-      'name' => $name,
-      'date' => date('c'),
-      'customer_id' => $customer_id,
-      'customer_email' => $customer_email,
-      'properties' => $properties,
-    );
+    $this->connection = new LoyaltyLion_Connection($this->token, $this->secret, $this->base_uri);
 
-    $response = $this->connection->post('/events', $params);
-
-    if (isset($response->error)) {
-      // this kind of error is from curl itself, e.g. a request timeout, so
-      // just return that error
-      return (object) array(
-        'success' => false,
-        'error' => $response->error,
-      );
-    }
-
-    $result = array(
-      'success' => (string) $response->status == '201'
-    );
-
-    if (!$result['success']) {
-      // even if curl succeeded, it can still fail if the request was invalid - we
-      // usually have the error as the body so just stick that in
-      $result['error'] = $response->body;
-    }
-
-    return (object) $result;
+    $this->events = new LoyaltyLion_Events($this->connection);
+    $this->orders = new LoyaltyLion_Orders($this->connection);
   }
 
   public function getCustomerAuthToken($customer_id) {
@@ -87,13 +48,100 @@ class Client {
     }
   }
 
-  /**
-   * Makes a test (ping) connection to the API server and returns true if
-   * the server responded successfully. Useful for sanity checking during development.
-   * 
-   * @return boolean True if could contact the API
-   */
-  public function test() {
+  protected function parseResponse($response) {
+    if (isset($response->error)) {
+      // this kind of error is from curl itself, e.g. a request timeout, so just return that error
+      return (object) array(
+        'success' => false,
+        'response' => $response,
+      );
+    }
 
+    $result = array(
+      'success' => (int) $response->status >= 200 && (int) $response->status <= 204
+    );
+
+    if (!$result['success']) {
+      // even if curl succeeded, it can still fail if the request was invalid - we
+      // usually have the error as the body so just stick that in
+      $result['error'] = $response->body;
+      $result['status'] = $response->status;
+    }
+
+    return $result;
+  }
+}
+
+class LoyaltyLion_Events extends LoyaltyLion_Client {
+
+  public function __construct($connection) {
+    $this->connection = $connection;
+  }
+
+  /**
+   * Track an event
+   * 
+   * @param  [type] $name             The activity name, as defined by you
+   * @param  [type] $customer_id      The ID of the current logged in customer
+   * @param  [type] $customer_email   The email of the current logged in customer
+   * @param  array  $properties       Activity specific properties
+   * @return object                   An object with information about the request. If the track 
+   *                                  was successful, object->success will be true.
+   */
+  public function track($name, $customer_id, $customer_email, array $properties = array()) {
+    $params = array(
+      'name' => $name,
+      'date' => date('c'),
+      'customer_id' => $customer_id,
+      'customer_email' => $customer_email,
+      'properties' => $properties,
+    );
+
+    $response = $this->connection->post('/events', $params);
+
+    return $this->parseResponse($response);
+  }
+}
+
+class LoyaltyLion_Orders extends LoyaltyLion_Client {
+
+  public function __construct($connection) {
+    $this->connection = $connection;
+  }
+
+  public function create($data) {
+    $response = $this->connection->post('/orders', $data);
+
+    return $this->parseResponse($response);
+  }
+
+  public function setCancelled($id) {
+    $response = $this->connection->put('/orders/' . $id . '/cancelled');
+
+    return $this->parseResponse($response);
+  }
+
+  public function setPaid($id) {
+    $response = $this->connection->put('/orders/' . $id . '/paid');
+
+    return $this->parseResponse($response);
+  }
+
+  public function setRefunded($id) {
+    $response = $this->connection->put('/orders/' . $id . '/refunded');
+
+    return $this->parseResponse($response);
+  }
+
+  public function addPayment($id, $data) {
+    $response = $this->connection->post('/orders/' . $id . '/payments', $data);
+
+    return $this->parseResponse($response);
+  }
+
+  public function addRefund($id, $data) {
+    $response = $this->connection->post('/orders/' . $id . '/refunds', $data);
+
+    return $this->parseResponse($response);
   }
 }
