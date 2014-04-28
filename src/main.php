@@ -17,7 +17,7 @@ class LoyaltyLion_Client {
       throw new Exception("Please provide a valid token and secret (token: ${token}, secret: ${secret})");
     }
 
-    if ($extra['base_uri']) $this->base_uri = $extra['base_uri'];
+    if (isset($extra['base_uri'])) $this->base_uri = $extra['base_uri'];
 
     $this->connection = new LoyaltyLion_Connection($this->token, $this->secret, $this->base_uri);
 
@@ -53,7 +53,8 @@ class LoyaltyLion_Client {
       // this kind of error is from curl itself, e.g. a request timeout, so just return that error
       return (object) array(
         'success' => false,
-        'response' => $response,
+        'status' => $response->status,
+        'error' => $response->error,
       );
     }
 
@@ -68,7 +69,7 @@ class LoyaltyLion_Client {
       $result['status'] = $response->status;
     }
 
-    return $result;
+    return (object) $result;
   }
 }
 
@@ -88,14 +89,15 @@ class LoyaltyLion_Events extends LoyaltyLion_Client {
    * @return object                   An object with information about the request. If the track 
    *                                  was successful, object->success will be true.
    */
-  public function track($name, $customer_id, $customer_email, array $properties = array()) {
+  public function track($name, $data) {
     $params = array(
       'name' => $name,
-      'date' => date('c'),
-      'customer_id' => $customer_id,
-      'customer_email' => $customer_email,
-      'properties' => $properties,
+      'date' => isset($data['date']) ? $data['date'] : date('c'),
+      'customer_id' => $data['customer_id'],
+      'customer_email' => $data['customer_email'],
     );
+
+    if (isset($data['properties'])) $params['properties'] = $data['properties'];
 
     $response = $this->connection->post('/events', $params);
 
@@ -111,6 +113,12 @@ class LoyaltyLion_Orders extends LoyaltyLion_Client {
 
   public function create($data) {
     $response = $this->connection->post('/orders', $data);
+
+    return $this->parseResponse($response);
+  }
+
+  public function update($id, $data) {
+    $response = $this->connection->put('/orders/' . $id, $data);
 
     return $this->parseResponse($response);
   }
