@@ -8,7 +8,11 @@ require('loyaltylion/main.php');
 $lion = new LoyaltyLion_Client($token, $secret);
 
 // track an activity
-$response = $lion->events->track('comment', 23, 'customer@example.com');
+$response = $lion->events->track('signup', array(
+  'customer_id' => $customer->id,
+  'customer_email' => $customer->email,
+  'date' => $customer->created_at,
+));
 
 if (!$response->success) {
   echo $response->error;
@@ -23,6 +27,20 @@ $response = $lion->orders->create(array(
   'total_shipping' => '0.00',
   'payment_status' => 'not_paid',
 ));
+
+// full idempotent order update
+// - this is the recommended method to update orders as you can call it any
+//   time an order's state changes because it's idempotent
+$response = $lion->orders->update($order->id, array(
+  'payment_status' => 'paid',
+  'cancellation_status' => 'not_cancelled',
+  'refund_status' => 'not_refunded',
+  'total_paid' => '399.99',
+  'total_refunded' => 0,
+));
+
+// if you'd rather only update when a specific state change happens (e.g.
+// order is cancelled, paid, etc) you can use these methods instead
 
 // set order state
 $lion->orders->setCancelled(929385923);
