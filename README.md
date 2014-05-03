@@ -8,7 +8,7 @@ require('loyaltylion/main.php');
 $lion = new LoyaltyLion_Client($token, $secret);
 
 // track an activity
-$response = $lion->events->track('signup', array(
+$response = $lion->activities->track('signup', array(
   'customer_id' => $customer->id,
   'customer_email' => $customer->email,
   'date' => $customer->created_at,
@@ -17,6 +17,18 @@ $response = $lion->events->track('signup', array(
 if (!$response->success) {
   echo $response->error;
 }
+
+// update the state of an activity (e.g. approve a review)
+$response = $lion->activities->track('review', array(
+  'merchant_id' => 23523,
+  'customer_id' => $customer->id,
+  'customer_email' => $customer->email,
+  'date' => $customer->created_at,
+));
+
+$lion->activities->update('review', 23523, array(
+  'state' => 'approved'
+));
 
 // track an order
 $response = $lion->orders->create(array(
@@ -30,7 +42,7 @@ $response = $lion->orders->create(array(
 
 // full idempotent order update
 // - this is the recommended method to update orders as you can call it any
-//   time an order's state changes because it's idempotent
+//   time an order's state changes to ensure LoyaltyLion's order is in sync
 $response = $lion->orders->update($order->id, array(
   'payment_status' => 'paid',
   'cancellation_status' => 'not_cancelled',
