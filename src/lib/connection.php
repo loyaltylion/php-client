@@ -32,7 +32,7 @@ class LoyaltyLion_Connection {
       // CURLOPT_HEADER => false,
       CURLOPT_USERPWD => $this->token . ':' . $this->secret,
     );
-    
+
     switch ($method) {
       case 'POST':
         $options += array(
@@ -55,8 +55,8 @@ class LoyaltyLion_Connection {
           'Content-Length: ' . strlen($body),
         ),
       );
-    } 
-    
+    }
+
     // now make the request
     $curl = curl_init();
     curl_setopt_array($curl, $options);
@@ -65,7 +65,7 @@ class LoyaltyLion_Connection {
     $headers = curl_getinfo($curl);
     $error_code = curl_errno($curl);
     $error_msg = curl_error($curl);
-    
+
     if ($error_code !== 0) {
       $response = array(
         'status'  => $headers['http_code'],
