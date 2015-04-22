@@ -72,6 +72,10 @@ $lion->orders->addRefund(929385923, array(
 
 ## Changelog
 
+**2015-04-22**
+
+* removed deprecated `getCustomerAuthToken` method
+
 **2014-03-02**
 
 * removed namespaces to support older PHP versions
