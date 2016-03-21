@@ -8,7 +8,7 @@ require('loyaltylion/main.php');
 $lion = new LoyaltyLion_Client($token, $secret);
 
 // track an activity
-$response = $lion->activities->track('signup', array(
+$response = $lion->activities->track('$signup', array(
   'customer_id' => $customer->id,
   'customer_email' => $customer->email,
   'date' => $customer->created_at,
@@ -19,14 +19,14 @@ if (!$response->success) {
 }
 
 // update the state of an activity (e.g. approve a review)
-$response = $lion->activities->track('review', array(
+$response = $lion->activities->track('$review', array(
   'merchant_id' => 23523,
   'customer_id' => $customer->id,
   'customer_email' => $customer->email,
   'date' => $customer->created_at,
 ));
 
-$lion->activities->update('review', 23523, array(
+$lion->activities->update('$review', 23523, array(
   'state' => 'approved'
 ));
 
@@ -71,6 +71,10 @@ $lion->orders->addRefund(929385923, array(
 ```
 
 ## Changelog
+
+**2016-03-21**
+
+* Update documentation to reflect correct activity namespaces
 
 **2015-04-22**
 
